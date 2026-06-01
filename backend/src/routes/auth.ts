@@ -84,6 +84,27 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/social-login', async (req: Request, res: Response) => {
+  try {
+    const { email, name, image } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      const randomPass = crypto.randomBytes(16).toString('hex');
+      const hashed = await bcrypt.hash(randomPass, 12);
+      user = await prisma.user.create({
+        data: { name: name || email.split('@')[0], email, password: hashed, image, emailVerified: true },
+      });
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, { expiresIn: '7d' });
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, image: user.image } });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/me', authenticate, async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({

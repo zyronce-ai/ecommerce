@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/toast';
 import { CartProvider } from '@/contexts/cart-context';
 import { WishlistProvider } from '@/contexts/wishlist-context';
+import { AuthSync } from '@/components/auth/auth-sync';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <CartProvider>
           <WishlistProvider>
             {children}
+            <AuthSync />
           </WishlistProvider>
         </CartProvider>
         <Toaster />

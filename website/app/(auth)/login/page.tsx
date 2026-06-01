@@ -31,6 +31,7 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.error || 'Login failed');
       setToken(data.token);
       document.cookie = `token=${data.token}; path=/; max-age=${7 * 86400}; SameSite=Lax`;
+      await signIn('credentials', { email, password, redirect: false });
       router.push('/');
     } catch (err: any) { setError(err.message); } finally { setLoading(false); }
   }
