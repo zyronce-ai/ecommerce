@@ -1,8 +1,9 @@
 import admin from 'firebase-admin';
+import type { Messaging } from 'firebase-admin/messaging';
 
-let fcm: admin.messaging.Messaging | null = null;
+let fcm: Messaging | null = null;
 
-export function initFirebaseAdmin() {
+export function initFirebaseAdmin(): Messaging | null {
   if (fcm) return fcm;
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -10,7 +11,7 @@ export function initFirebaseAdmin() {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (!projectId || !clientEmail || !privateKey) {
-    console.warn('[FCM] ⚠️ Firebase Admin not configured');
+    console.warn('[FCM] Firebase Admin not configured');
     return null;
   }
 
@@ -19,10 +20,10 @@ export function initFirebaseAdmin() {
       credential: admin.credential.cert({ projectId, clientEmail, privateKey: privateKey.replace(/\\n/g, '\n') }),
     });
     fcm = app.messaging();
-    console.log('[FCM] ✅ Firebase Admin initialized');
+    console.log('[FCM] Firebase Admin initialized');
     return fcm;
   } catch (err: any) {
-    console.warn('[FCM] ⚠️ Failed to init Firebase Admin:', err.message);
+    console.warn('[FCM] Failed to init Firebase Admin:', err.message);
     return null;
   }
 }
