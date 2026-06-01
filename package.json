@@ -1,0 +1,36 @@
+{
+  "name": "ecommerce",
+  "private": true,
+  "workspaces": [
+    "website",
+    "admin",
+    "vendor",
+    "backend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npx turbo dev",
+    "dev:website": "npm run dev -w website",
+    "dev:admin": "npm run dev -w admin",
+    "dev:vendor": "npm run dev -w vendor",
+    "dev:backend": "npm run dev -w backend",
+    "build": "npx turbo build",
+    "build:website": "npm run build -w website",
+    "build:admin": "npm run build -w admin",
+    "build:vendor": "npm run build -w vendor",
+    "setup": "node scripts/setup.js",
+    "seed": "npx ts-node backend/mongo/seed.ts",
+    "db:push": "npx prisma db push --schema=backend/prisma/schema.prisma",
+    "db:generate": "npx prisma generate --schema=backend/prisma/schema.prisma",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0",
+    "turbo": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "npm@11.6.2"
+}
