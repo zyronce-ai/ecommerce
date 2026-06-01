@@ -53,6 +53,7 @@ import notificationRoutes from './routes/notifications';
 import seedRoutes from './routes/seed';
 import settingsRoutes from './routes/settings';
 import { initFirebaseAdmin } from './utils/firebase-admin';
+import { createCollection, syncAllProducts } from './utils/typesense';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -103,6 +104,18 @@ async function start() {
   }
 
   initFirebaseAdmin();
+
+  if (process.env.TYPESENSE_API_KEY) {
+    try {
+      await createCollection();
+      await syncAllProducts();
+      console.log('[TS] ✅ Typesense ready');
+    } catch (err: any) {
+      console.warn('[TS] Typesense not available:', err.message);
+    }
+  } else {
+    console.log('[TS] Typesense not configured — using MongoDB search');
+  }
 
   httpServer.listen(PORT, () => {
     console.log(`\n  🚀 ShopHub API Server`);

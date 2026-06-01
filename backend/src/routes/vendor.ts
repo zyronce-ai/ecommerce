@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../index';
 import { Product } from '../../mongo/models/Product';
 import { authenticate, requireRole } from '../middleware/auth';
+import { syncProduct, removeProduct } from '../utils/typesense';
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.post('/products/:vendorId', authenticate, requireRole('VENDOR', 'ADMIN'),
     const data = { ...req.body, vendor: vendorId };
     if (!data.slug && data.name) data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now();
     const product = await Product.create(data);
+    syncProduct(product);
     res.status(201).json(product);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -58,6 +60,7 @@ router.put('/products/:id', authenticate, requireRole('VENDOR', 'ADMIN'), async 
     }
     if (req.body.name && !req.body.slug) req.body.slug = req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now();
     const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (updated) syncProduct(updated);
     res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -72,6 +75,7 @@ router.delete('/products/:id', authenticate, requireRole('VENDOR', 'ADMIN'), asy
       return res.status(403).json({ error: 'Forbidden' });
     }
     await Product.findByIdAndDelete(req.params.id);
+    removeProduct(req.params.id);
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

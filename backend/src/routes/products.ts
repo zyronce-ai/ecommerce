@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { Product } from '../../mongo/models/Product';
 import { authenticate, requireRole } from '../middleware/auth';
+import { syncProduct, removeProduct } from '../utils/typesense';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.post('/', authenticate, requireRole('ADMIN', 'VENDOR'), async (req: Reque
     const data = req.user!.role === 'VENDOR' ? { ...req.body, vendor: req.user!.id } : req.body;
     if (!data.slug && data.name) data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now();
     const product = await Product.create(data);
+    syncProduct(product);
     res.status(201).json(product);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -43,6 +45,7 @@ router.put('/:id', authenticate, requireRole('ADMIN', 'VENDOR'), async (req: Req
     }
     if (req.body.name && !req.body.slug) req.body.slug = req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now();
     const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (updated) syncProduct(updated);
     res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

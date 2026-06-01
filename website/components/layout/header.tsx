@@ -18,6 +18,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { getInitials } from '@/lib/utils';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/cart-context';
 import { useWishlist } from '@/contexts/wishlist-context';
 
@@ -26,6 +27,14 @@ export function Header() {
   const { count: cartCount } = useCart();
   const { productIds } = useWishlist();
   const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (q) router.push(`/products?q=${encodeURIComponent(q)}`);
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -95,21 +104,21 @@ export function Header() {
         </div>
 
         {showSearch ? (
-          <div className="absolute inset-x-0 top-0 z-50 flex h-16 items-center gap-2 bg-background px-3 md:relative md:inset-auto md:px-0">
+          <form onSubmit={handleSearch} className="absolute inset-x-0 top-0 z-50 flex h-16 items-center gap-2 bg-background px-3 md:relative md:inset-auto md:px-0">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search products..." className="pl-10" autoFocus />
+              <Input placeholder="Search products..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus />
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setShowSearch(false)}>
+            <Button variant="ghost" size="icon" type="button" onClick={() => setShowSearch(false)}>
               <X className="h-5 w-5" />
             </Button>
-          </div>
+          </form>
         ) : (
           <div className="hidden md:flex md:w-72 lg:w-96">
-            <div className="relative w-full">
+            <form onSubmit={handleSearch} className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Search products..." className="pl-10" />
-            </div>
+              <Input placeholder="Search products..." className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            </form>
           </div>
         )}
 

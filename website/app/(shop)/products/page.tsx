@@ -1,6 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense } from 'react';
+
+export default function ProductsPageWrapper() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-3 py-6"><p className="text-muted-foreground">Loading...</p></div>}>
+      <ProductsPage />
+    </Suspense>
+  );
+}
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ProductCard } from '@/components/product/product-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,39 +30,72 @@ const SORT_OPTIONS = [
   { value: 'price_desc', label: 'Price: High to Low' },
 ];
 
-export default function ProductsPage() {
+function ProductsPage() {
+  const searchParams = useSearchParams();
+
   const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [sort, setSort] = useState('newest');
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const fetchProducts = useCallback(async (opts: { q?: string; cat?: string; sort?: string; min?: number; max?: number }) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (opts.q) params.set('q', opts.q);
+      if (opts.sort && opts.sort !== 'newest') params.set('sort', opts.sort);
+      if (opts.cat) params.set('category', opts.cat);
+      if (opts.min !== undefined) params.set('minPrice', String(opts.min));
+      if (opts.max !== undefined) params.set('maxPrice', String(opts.max));
+
+      const res = await fetch(`${API}/api/search?${params}`);
+      const data = await res.json();
+      setProducts(data.hits || []);
+      setTotal(data.total || 0);
+    } catch {
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${API}/api/products`).then(r => r.json()),
-      fetch(`${API}/api/categories`).then(r => r.json()),
-    ]).then(([products, cats]) => {
-      setAllProducts(products);
-      setCategories(cats.map((c: any) => c.name));
-    }).catch(() => {}).finally(() => setLoading(false));
+    fetch(`${API}/api/categories`).then(r => r.json()).then((cats) => {
+      setCategories((Array.isArray(cats) ? cats : []).map((c: any) => c.name));
+    }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    fetchProducts({ q: q || undefined, sort, min: priceRange[0], max: priceRange[1], cat: selectedCategories[0] || undefined });
+  }, [sort, priceRange, selectedCategories, fetchProducts]);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchProducts({ q: q || undefined, sort, min: priceRange[0], max: priceRange[1], cat: selectedCategories[0] || undefined });
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q) {
+      setSearchQuery(q);
+      fetchProducts({ q, sort });
+    }
+  }, [searchParams, sort, fetchProducts]);
 
   const toggleCategory = (cat: string) => {
     setSelectedCategories((prev) => prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]);
   };
-
-  const filtered = allProducts
-    .filter((p: any) => p.name?.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter((p: any) => p.price >= priceRange[0] && p.price <= priceRange[1])
-    .filter((p: any) => selectedCategories.length === 0 || selectedCategories.includes(p.category?.name))
-    .sort((a: any, b: any) => {
-      if (sort === 'price_asc') return a.price - b.price;
-      if (sort === 'price_desc') return b.price - a.price;
-      return 0;
-    });
 
   return (
     <div className="container mx-auto px-3 py-6 sm:px-4 sm:py-8">
@@ -70,11 +114,14 @@ export default function ProductsPage() {
       <div className="flex gap-6">
         <aside className="hidden w-56 shrink-0 lg:block"><FilterSidebar categories={categories} selectedCategories={selectedCategories} toggleCategory={toggleCategory} priceRange={priceRange} setPriceRange={setPriceRange} /></aside>
         <div className="flex-1">
+          <p className="mb-3 text-xs text-muted-foreground">{total} product{total !== 1 ? 's' : ''} found</p>
           {loading ? (
             <p className="text-muted-foreground">Loading...</p>
+          ) : products.length === 0 ? (
+            <p className="text-muted-foreground">No products found</p>
           ) : (
             <div className={view === 'grid' ? 'grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3' : 'space-y-3'}>
-              {filtered.map((p: any) => (
+              {products.map((p: any) => (
                 <ProductCard key={p._id} product={{ id: p._id, name: p.name, price: p.price, comparePrice: p.comparePrice, image: p.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', rating: p.rating || 4.5, reviews: p.reviewCount || 0 }} />
               ))}
             </div>
