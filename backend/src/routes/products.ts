@@ -16,7 +16,7 @@ router.get('/', async (_req: Request, res: Response) => {
 
 router.get('/:slug', async (req: Request, res: Response) => {
   try {
-    const product = await Product.findOne({ slug: req.params.slug }).populate('category').populate('reviews');
+    const product = await Product.findOne({ slug: req.params.slug }).populate('category');
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json(product);
   } catch (err: any) {
