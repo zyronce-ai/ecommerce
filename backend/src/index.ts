@@ -30,10 +30,12 @@ app.use(express.urlencoded({ extended: true }));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
 });
+app.use('/api/upload', (_req, _res, next) => next());
+app.use('/api/health', (_req, _res, next) => next());
 app.use('/api', limiter);
 
 import authRoutes from './routes/auth';
