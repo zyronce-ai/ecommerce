@@ -22,9 +22,9 @@ router.get('/product/:productId', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', authenticate, async (req: Request, res: Response) => {
   try {
-    const review = await Review.create(req.body);
+    const review = await Review.create({ ...req.body, user: req.user!.id });
     res.status(201).json(review);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

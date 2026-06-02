@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ProductCard } from '@/components/product/product-card';
-import { ShoppingCart, Heart, Star, Minus, Plus, Truck, Shield, RotateCcw, ChevronRight, ZoomIn, Check, Loader2 } from 'lucide-react';
+import { ShoppingCart, Heart, Star, Minus, Plus, Truck, Shield, RotateCcw, ChevronRight, ZoomIn, Check, Loader2, MessageSquare, Send } from 'lucide-react';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
+import { getToken } from '@/lib/use-api';
 import { useCart } from '@/contexts/cart-context';
 import { useWishlist } from '@/contexts/wishlist-context';
+import { toast } from 'sonner';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -27,6 +29,9 @@ export default function ProductDetailPage() {
   const [zoomed, setZoomed] = useState(false);
   const { addToCart } = useCart();
   const { isWishlisted, toggle } = useWishlist();
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -37,8 +42,27 @@ export default function ProductDetailPage() {
       setProduct(p);
       const sameCat = all.filter((x: any) => x.category?._id === p.category?._id && x._id !== p._id).slice(0, 4);
       setProducts(sameCat.length ? sameCat : all.filter((x: any) => x._id !== p._id).slice(0, 4));
+      fetch(`${API}/api/reviews/product/${p._id}`).then(r => r.json()).then(setReviews).catch(() => {});
     }).catch(() => setProduct(null)).finally(() => setLoading(false));
   }, [slug]);
+
+  async function handleSubmitReview() {
+    const token = getToken();
+    if (!token) { toast.error('Please login to leave a review'); return; }
+    setSubmittingReview(true);
+    try {
+      const res = await fetch(`${API}/api/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ product: product._id, ...reviewForm }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      const newReview = await res.json();
+      setReviews(prev => [newReview, ...prev]);
+      setReviewForm({ rating: 5, title: '', comment: '' });
+      toast.success('Review submitted!');
+    } catch (err: any) { toast.error(err.message); } finally { setSubmittingReview(false); }
+  }
 
   async function handleAddToCart() {
     if (!product?._id || adding) return;
@@ -175,6 +199,60 @@ export default function ProductDetailPage() {
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      <Separator className="my-8" />
+      <h2 className="mb-4 text-lg font-bold sm:text-xl">Customer Reviews</h2>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-3">
+          {reviews.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No reviews yet. Be the first to review!</p>
+          ) : (
+            reviews.map((r: any) => (
+              <div key={r._id} className="rounded-lg border p-3 sm:p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-0.5">
+                    {[1,2,3,4,5].map((s) => (<Star key={s} className={`h-3 w-3 ${s <= r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />))}
+                  </div>
+                  <span className="text-xs text-muted-foreground">{r.name || 'Anonymous'}</span>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <span className="text-xs text-muted-foreground">{new Date(r.createdAt).toLocaleDateString('en-IN')}</span>
+                </div>
+                {r.title && <p className="text-sm font-medium">{r.title}</p>}
+                {r.comment && <p className="text-sm text-muted-foreground mt-1">{r.comment}</p>}
+              </div>
+            ))
+          )}
+        </div>
+        <div>
+          <div className="rounded-lg border p-3 sm:p-4 sticky top-4">
+            <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5"><MessageSquare className="h-4 w-4" /> Write a Review</h3>
+            <div className="flex items-center gap-1 mb-3">
+              {[1,2,3,4,5].map((s) => (
+                <button key={s} onClick={() => setReviewForm({ ...reviewForm, rating: s })}>
+                  <Star className={`h-5 w-5 ${s <= reviewForm.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                </button>
+              ))}
+            </div>
+            <input
+              placeholder="Review title"
+              value={reviewForm.title}
+              onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
+              className="w-full rounded-md border px-3 py-1.5 text-xs mb-2 outline-none focus:border-primary"
+            />
+            <textarea
+              placeholder="Write your review..."
+              value={reviewForm.comment}
+              onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+              rows={3}
+              className="w-full rounded-md border px-3 py-1.5 text-xs mb-3 outline-none focus:border-primary resize-none"
+            />
+            <Button size="sm" className="w-full h-8 text-xs" onClick={handleSubmitReview} disabled={submittingReview}>
+              {submittingReview ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3 mr-1" />}
+              {submittingReview ? 'Submitting...' : 'Submit Review'}
+            </Button>
+          </div>
         </div>
       </div>
 

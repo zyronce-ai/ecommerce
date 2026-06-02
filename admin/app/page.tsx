@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, ShoppingBag, Package, IndianRupee, TrendingUp, Activity } from 'lucide-react';
+import { Users, ShoppingBag, Package, IndianRupee, TrendingUp, Activity, Layers, Star } from 'lucide-react';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { useApi } from '@/lib/use-api';
 
@@ -14,12 +14,13 @@ export default function AdminDashboard() {
     { label: 'Orders', value: stats?.orders ?? '—', change: 'Total', icon: ShoppingBag, trend: 'up' },
     { label: 'Users', value: stats?.users ?? '—', change: 'Registered', icon: Users, trend: 'up' },
     { label: 'Products', value: stats?.products ?? '—', change: 'Listed', icon: Package, trend: 'up' },
+    { label: 'Categories', value: stats?.categories ?? '—', change: 'Active', icon: Layers, trend: 'up' },
   ];
 
   return (
     <div className="p-6">
       <div className="mb-6"><h1 className="text-2xl font-bold">Dashboard</h1><p className="text-sm text-muted-foreground">Welcome to ShopHub Admin</p></div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {STATS.map((s) => (
           <Card key={s.label}>
             <CardContent className="flex items-center justify-between p-6">

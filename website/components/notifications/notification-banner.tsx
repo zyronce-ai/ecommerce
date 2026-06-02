@@ -20,7 +20,7 @@ export function NotificationBanner() {
     setLoading(true);
     const token = await requestNotificationPermission();
     if (token && session?.user?.id) {
-      await fetch(`http://localhost:5000/api/notifications/token`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notifications/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, userId: session.user.id }),

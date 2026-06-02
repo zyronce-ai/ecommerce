@@ -34,6 +34,8 @@ model Order {
   userId     String
   items      Json
   total      Float
+  discount   Float?
+  couponCode String?
   status     String   @default("PENDING")
   address    Json?
   paymentMethod String?

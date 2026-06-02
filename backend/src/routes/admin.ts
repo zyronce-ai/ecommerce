@@ -7,13 +7,15 @@ const router = Router();
 
 router.use(authenticate, requireRole('ADMIN'));
 
+import { Category } from '../../mongo/models/Category';
+
 router.get('/stats', async (_req: Request, res: Response) => {
   try {
     const [users, orders, products, categories] = await Promise.all([
       prisma.user.count(),
       prisma.order.count(),
       Product.countDocuments(),
-      prisma.user.count({ where: { role: 'VENDOR' } }),
+      Category.countDocuments(),
     ]);
     const revenue = await prisma.order.aggregate({ _sum: { total: true } });
     res.json({ users, orders, products, categories, revenue: revenue._sum.total || 0 });
