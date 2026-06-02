@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { ShoppingCart, Heart, Search, Menu, User, LogOut, Settings, Store, X, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -21,9 +21,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/cart-context';
 import { useWishlist } from '@/contexts/wishlist-context';
+import { useAuth } from '@/lib/use-auth';
 
 export function Header() {
   const { data: session } = useSession();
+  const { user: customUser, logout: customLogout } = useAuth();
+  const currentUser = customUser || session?.user;
   const { count: cartCount } = useCart();
   const { productIds } = useWishlist();
   const [showSearch, setShowSearch] = useState(false);
@@ -34,6 +37,13 @@ export function Header() {
     e.preventDefault();
     const q = searchQuery.trim();
     if (q) router.push(`/products?q=${encodeURIComponent(q)}`);
+  }
+
+  async function handleLogout() {
+    try { await signOut({ callbackUrl: '/', redirect: false }); } catch {}
+    customLogout();
+    router.push('/');
+    router.refresh();
   }
 
   return (
@@ -72,7 +82,7 @@ export function Header() {
                   <Link href="/products?category=beauty" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted">💄 Beauty</Link>
                   <SeparatorMobile />
                   <p className="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Account</p>
-                  {session?.user ? (
+                  {currentUser ? (
                     <>
                       <Link href="/orders" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted"><Package className="h-4 w-4" /> My Orders</Link>
                       <Link href="/wishlist" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted"><Heart className="h-4 w-4" /> Wishlist</Link>
@@ -141,21 +151,21 @@ export function Header() {
             </Button>
           </Link>
 
-          {session?.user ? (
+          {currentUser ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
-                    <AvatarImage src={session.user.image || ''} />
-                    <AvatarFallback>{getInitials(session.user.name || 'U')}</AvatarFallback>
+                    <AvatarImage src={currentUser.image || ''} />
+                    <AvatarFallback>{getInitials(currentUser.name || 'U')}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span className="truncate">{session.user.name}</span>
-                    <span className="truncate text-xs text-muted-foreground">{session.user.email}</span>
+                    <span className="truncate">{currentUser.name}</span>
+                    <span className="truncate text-xs text-muted-foreground">{currentUser.email}</span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -169,7 +179,7 @@ export function Header() {
                   <Link href="/settings" className="cursor-pointer"><Settings className="mr-2 h-4 w-4" /> Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer text-destructive">
+                <DropdownMenuItem className="cursor-pointer text-destructive" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" /> Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
