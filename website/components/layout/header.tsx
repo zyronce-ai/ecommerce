@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/cart-context';
 import { useWishlist } from '@/contexts/wishlist-context';
 import { useAuth } from '@/lib/use-auth';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 
 export function Header() {
   const { data: session } = useSession();
@@ -143,6 +144,8 @@ export function Header() {
               {productIds.length > 0 && <Badge className="absolute -right-1 -top-1 h-4 w-4 rounded-full p-0 text-[10px]">{productIds.length}</Badge>}
             </Button>
           </Link>
+
+          <NotificationBell />
 
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative">
