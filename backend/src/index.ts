@@ -21,7 +21,7 @@ const io = new SocketServer(httpServer, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(compression());
 app.use(cors({ origin: true, credentials: true }));
 app.use(morgan('dev'));

@@ -22,7 +22,7 @@ router.get('/', async (req: Request, res: Response) => {
       return res.json(result);
     }
 
-    const filter: any = {};
+    const filter: any = { isActive: { $ne: false } };
     if (q) filter.name = { $regex: q, $options: 'i' };
     if (category) filter.category = category;
     if (minPrice || maxPrice) {

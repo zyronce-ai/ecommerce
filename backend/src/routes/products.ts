@@ -9,7 +9,7 @@ const router = Router();
 router.get('/', async (_req: Request, res: Response) => {
   try {
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    const products = await Product.find().populate('category').sort({ createdAt: -1 }).limit(50);
+    const products = await Product.find({ isActive: { $ne: false } }).populate('category').sort({ createdAt: -1 }).limit(50);
     res.json(products);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -19,7 +19,8 @@ router.get('/', async (_req: Request, res: Response) => {
 router.get('/:slug', async (req: Request, res: Response) => {
   try {
     const param = req.params.slug;
-    const query: any = mongoose.Types.ObjectId.isValid(param) ? { $or: [{ slug: param }, { _id: param }] } : { slug: param };
+    const query: any = { isActive: { $ne: false } };
+    query.$or = mongoose.Types.ObjectId.isValid(param) ? [{ slug: param }, { _id: param }] : [{ slug: param }];
     const product = await Product.findOne(query).populate('category');
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json(product);

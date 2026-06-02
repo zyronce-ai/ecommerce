@@ -16,7 +16,12 @@ const COLLECTION = 'products';
 
 export async function createCollection() {
   try {
-    await client.collections(COLLECTION).retrieve();
+    const existing = await client.collections(COLLECTION).retrieve();
+    const fieldNames = (existing.fields || []).map((f: any) => f.name);
+    if (!fieldNames.includes('isActive')) {
+      console.log('[TYPESENSE] Adding isActive field to existing collection');
+      await client.collections(COLLECTION).update({ fields: [{ name: 'isActive', type: 'bool' }] });
+    }
   } catch {
     await client.collections().create({
       name: COLLECTION,
@@ -28,6 +33,7 @@ export async function createCollection() {
         { name: 'category', type: 'string', facet: true },
         { name: 'tags', type: 'string[]', facet: true, optional: true },
         { name: 'inStock', type: 'bool' },
+        { name: 'isActive', type: 'bool' },
         { name: 'rating', type: 'float' },
         { name: 'images', type: 'string[]', optional: true },
         { name: 'vendor', type: 'string' },
@@ -47,6 +53,7 @@ function toTypesenseDoc(product: any) {
     category: product.category?.name || product.category || '',
     tags: product.tags || [],
     inStock: product.inStock ?? true,
+    isActive: product.isActive !== false,
     rating: product.rating || 0,
     images: product.images || [],
     vendor: product.vendor || '',
@@ -80,7 +87,7 @@ export async function searchProducts(params: {
 }) {
   const { q, category, minPrice, maxPrice, sort, page = 1, perPage = 20 } = params;
 
-  const filterBy: string[] = [];
+  const filterBy: string[] = ['isActive:=true'];
   if (category) filterBy.push(`category:=${category}`);
   if (minPrice !== undefined) filterBy.push(`price:>=${minPrice}`);
   if (maxPrice !== undefined) filterBy.push(`price:<=${maxPrice}`);
