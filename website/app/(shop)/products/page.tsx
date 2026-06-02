@@ -122,7 +122,7 @@ function ProductsPage() {
           ) : (
             <div className={view === 'grid' ? 'grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3' : 'space-y-3'}>
               {products.map((p: any) => (
-                <ProductCard key={p._id} product={{ id: p._id, name: p.name, price: p.price, comparePrice: p.comparePrice, image: p.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', rating: p.rating || 4.5, reviews: p.reviewCount || 0 }} />
+                <ProductCard key={p._id} product={{ id: p.slug || p._id, name: p.name, price: p.price, comparePrice: p.comparePrice, image: p.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', rating: p.rating || 4.5, reviews: p.reviewCount || 0 }} />
               ))}
             </div>
           )}
