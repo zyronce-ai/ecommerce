@@ -10,3 +10,8 @@ dist/
 **/prisma/migrations/
 coverage/
 .turbo/
+
+# Service account files (sensitive)
+**/firebase-service-account.json
+**/service-account*.json
+**/*-firebase-adminsdk-*.json

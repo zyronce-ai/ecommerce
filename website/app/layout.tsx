@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
@@ -15,11 +15,18 @@ export const metadata: Metadata = {
   },
   description: 'Discover amazing products at unbeatable prices. Shop electronics, fashion, home goods and more.',
   keywords: ['ecommerce', 'shop', 'online store', 'electronics', 'fashion', 'deals'],
+  manifest: '/manifest.json',
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     siteName: 'ShopHub',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({

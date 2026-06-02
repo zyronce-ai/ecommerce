@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Bell, X } from 'lucide-react';
-import { requestNotificationPermission } from '@/lib/firebase';
+import { requestNotificationPermission, isFirebaseConfigured } from '@/lib/firebase';
 import { useAuth } from '@/lib/use-auth';
 import { getToken } from '@/lib/use-api';
 
@@ -14,6 +14,7 @@ export function NotificationBanner() {
   const currentUser = customUser || session?.user;
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof Notification === 'undefined') return;
@@ -21,11 +22,37 @@ export function NotificationBanner() {
   }, []);
 
   async function handleEnable() {
+    setError(null);
+
+    if (!isFirebaseConfigured()) {
+      setError('Push notifications not configured. Contact admin.');
+      return;
+    }
+
+    if (typeof Notification === 'undefined') {
+      setError('Your browser does not support notifications.');
+      return;
+    }
+
+    if (!currentUser?.id) {
+      setError('Please login to enable notifications.');
+      return;
+    }
+
     setLoading(true);
-    const token = await requestNotificationPermission();
-    if (token && currentUser?.id) {
+    try {
+      const token = await requestNotificationPermission();
+      if (!token) {
+        const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unknown';
+        if (perm === 'denied') {
+          setError('Notifications are blocked. Click the lock icon in address bar to allow.');
+        } else {
+          setError('Could not get notification permission. Check console (F12) for details.');
+        }
+        return;
+      }
       const authToken = getToken();
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notifications/token`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notifications/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,9 +60,16 @@ export function NotificationBanner() {
         },
         body: JSON.stringify({ token, userId: currentUser.id, device: 'web' }),
       });
+      if (!res.ok) {
+        setError('Saved locally but server sync failed. Will retry later.');
+        console.error('[FCM] Token save failed:', await res.text());
+      }
+      setShow(false);
+    } catch (err: any) {
+      setError('Error: ' + (err.message || 'Unknown'));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    setShow(false);
   }
 
   if (!show) return null;
@@ -47,6 +81,7 @@ export function NotificationBanner() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium">Stay updated!</p>
           <p className="text-xs text-muted-foreground">Get order updates & exclusive deals</p>
+          {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
         </div>
         <div className="flex shrink-0 gap-1">
           <Button size="sm" onClick={handleEnable} disabled={loading}>
