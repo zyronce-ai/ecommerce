@@ -20,7 +20,11 @@ export async function createCollection() {
     const fieldNames = (existing.fields || []).map((f: any) => f.name);
     if (!fieldNames.includes('isActive')) {
       console.log('[TYPESENSE] Adding isActive field to existing collection');
-      await client.collections(COLLECTION).update({ fields: [{ name: 'isActive', type: 'bool' }] });
+      try {
+        await client.collections(COLLECTION).update({ fields: [{ name: 'isActive', type: 'bool', optional: true }] });
+      } catch (e: any) {
+        console.warn('[TYPESENSE] Could not add isActive field:', e.message);
+      }
     }
   } catch {
     await client.collections().create({
@@ -33,7 +37,7 @@ export async function createCollection() {
         { name: 'category', type: 'string', facet: true },
         { name: 'tags', type: 'string[]', facet: true, optional: true },
         { name: 'inStock', type: 'bool' },
-        { name: 'isActive', type: 'bool' },
+        { name: 'isActive', type: 'bool', optional: true },
         { name: 'rating', type: 'float' },
         { name: 'images', type: 'string[]', optional: true },
         { name: 'vendor', type: 'string' },
@@ -87,7 +91,7 @@ export async function searchProducts(params: {
 }) {
   const { q, category, minPrice, maxPrice, sort, page = 1, perPage = 20 } = params;
 
-  const filterBy: string[] = ['isActive:=true'];
+  const filterBy: string[] = ['isActive:!=false'];
   if (category) filterBy.push(`category:=${category}`);
   if (minPrice !== undefined) filterBy.push(`price:>=${minPrice}`);
   if (maxPrice !== undefined) filterBy.push(`price:<=${maxPrice}`);
