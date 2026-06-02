@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { Product } from '../../mongo/models/Product';
 import { authenticate, requireRole } from '../middleware/auth';
 import { syncProduct, removeProduct } from '../utils/typesense';
@@ -16,7 +17,9 @@ router.get('/', async (_req: Request, res: Response) => {
 
 router.get('/:slug', async (req: Request, res: Response) => {
   try {
-    const product = await Product.findOne({ $or: [{ slug: req.params.slug }, { _id: req.params.slug }] }).populate('category');
+    const param = req.params.slug;
+    const query: any = mongoose.Types.ObjectId.isValid(param) ? { $or: [{ slug: param }, { _id: param }] } : { slug: param };
+    const product = await Product.findOne(query).populate('category');
     if (!product) return res.status(404).json({ error: 'Product not found' });
     res.json(product);
   } catch (err: any) {
