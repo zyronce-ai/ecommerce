@@ -6,6 +6,7 @@ const router = Router();
 
 router.get('/', async (req: Request, res: Response) => {
   try {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     const { q, category, minPrice, maxPrice, sort, page, perPage } = req.query;
 
     if (process.env.TYPESENSE_API_KEY) {

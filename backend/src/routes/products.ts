@@ -8,6 +8,7 @@ const router = Router();
 
 router.get('/', async (_req: Request, res: Response) => {
   try {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     const products = await Product.find().populate('category').sort({ createdAt: -1 }).limit(50);
     res.json(products);
   } catch (err: any) {
@@ -63,6 +64,7 @@ router.delete('/:id', authenticate, requireRole('ADMIN', 'VENDOR'), async (req: 
       return res.status(403).json({ error: 'Forbidden' });
     }
     await Product.findByIdAndDelete(req.params.id);
+    removeProduct(req.params.id);
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
