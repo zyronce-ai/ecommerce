@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { formatPrice } from '@/lib/utils';
 import { useApi, apiPost, apiPut, apiDelete, getVendorId } from '@/lib/use-api';
-import { Search, Plus, Edit, Trash2, Upload, ArrowLeft, X } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Upload, ArrowLeft, X, Loader2, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
@@ -159,19 +159,29 @@ export default function VendorProductsPage() {
                   <div className="space-y-1"><Label>Images (max 4)</Label>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading || images.length >= 4}>
-                        <Upload className="mr-1 h-4 w-4" />{uploading ? 'Uploading...' : 'Upload'}
+                        {uploading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Upload className="mr-1 h-4 w-4" />}
+                        {uploading ? 'Uploading...' : 'Upload Images'}
                       </Button>
                       <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
                     </div>
-                    <div className="flex gap-2 mt-2">
-                      {images.map((url, i) => (
-                        <div key={i} className="relative h-16 w-16 rounded border overflow-hidden">
-                          <img src={url.startsWith('http') ? url : `${API}${url}`} className="h-full w-full object-cover" />
-                          <button onClick={() => removeImage(i)} className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-white flex items-center justify-center"><X className="h-3 w-3" /></button>
-                        </div>
-                      ))}
-                      {images.length === 0 && <p className="text-xs text-muted-foreground">No images selected</p>}
-                    </div>
+                    {images.length > 0 ? (
+                      <div className="flex gap-3 mt-2 flex-wrap">
+                        {images.map((url, i) => (
+                          <div key={i} className="relative h-20 w-20 rounded-lg border overflow-hidden bg-muted group">
+                            <img src={url.startsWith('http') ? url : `${API}${url}`} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = ''; }} />
+                            <button onClick={() => removeImage(i)} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"><X className="h-3 w-3" /></button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex gap-3 mt-2">
+                        {[0,1,2,3].map(i => (
+                          <div key={i} className="h-20 w-20 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground">
+                            <ImageIcon className="h-6 w-6" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-1"><Label>Specifications</Label>
                     {specs.map((s, i) => (
