@@ -17,17 +17,55 @@ export function NotificationBanner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof Notification === 'undefined') return;
-    if (Notification.permission === 'default') setShow(true);
-  }, []);
+    if (currentUser) {
+      setShow(true);
+    }
+  }, [currentUser]);
+
+  function detectBrave(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    return (
+      // @ts-ignore
+      (navigator.brave && typeof navigator.brave.isBrave === 'function') ||
+      /Brave/i.test(navigator.userAgent)
+    );
+  }
 
   async function handleEnable() {
-    setError(null);
-
-    if (!isFirebaseConfigured()) {
-      setError('Push notifications not configured. Contact admin.');
+    if (!currentUser) {
+      setError('Please login to enable notifications.');
       return;
     }
+
+    if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+      setError('Notifications are blocked. Click the lock icon in address bar to allow.');
+      return;
+    }
+
+    if (detectBrave()) {
+      setError(
+        'Brave browser blocks FCM by default. Use Chrome/Edge, OR enable in Brave: brave://settings/privacy → "Google services for push messaging" → ON. Then hard refresh (Ctrl+Shift+R).'
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await requestNotificationPermission();
+      if (!result.token) {
+        const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unknown';
+        const errMsg = result.error || 'Unknown error';
+        if (perm === 'denied') {
+          setError('Notifications are blocked. Click the lock icon in address bar → Allow notifications.');
+        } else if (errMsg.includes('push service')) {
+          setError('Push service unreachable. Try: (1) Chrome/Edge browser, (2) Disable ad-blocker, (3) Incognito mode.');
+        } else if (errMsg.includes('vapid')) {
+          setError('VAPID key invalid. Regenerate in Firebase Console.');
+        } else {
+          setError(`Error: ${errMsg}`);
+        }
+        return;
+      }
 
     if (typeof Notification === 'undefined') {
       setError('Your browser does not support notifications.');
