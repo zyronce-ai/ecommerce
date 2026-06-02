@@ -14,6 +14,8 @@ const client = new Typesense.Client({
 
 const COLLECTION = 'products';
 
+export const typesenseClient = client;
+
 export async function createCollection() {
   try {
     const existing = await client.collections(COLLECTION).retrieve();

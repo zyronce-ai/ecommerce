@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../index';
 import { Product } from '../../mongo/models/Product';
 import { authenticate, requireRole } from '../middleware/auth';
+import { createCollection, typesenseClient } from '../utils/typesense';
 
 const router = Router();
 
@@ -71,6 +72,38 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
   try {
     await prisma.user.delete({ where: { id: req.params.id } });
     res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/products/clear-all', async (req: Request, res: Response) => {
+  try {
+    if (req.query.confirm !== 'YES_DELETE_ALL_PRODUCTS') {
+      return res.status(400).json({ error: 'Missing confirmation. Pass ?confirm=YES_DELETE_ALL_PRODUCTS' });
+    }
+    const deletedMongo = await Product.deleteMany({});
+    const deletedCart = await prisma.cartItem.deleteMany({}).catch(() => ({ count: 0 }));
+    const deletedWishlist = await prisma.wishlistItem.deleteMany({}).catch(() => ({ count: 0 }));
+    await Product.syncIndexes().catch(() => {});
+    let typesenseCleared = false;
+    try {
+      try {
+        await typesenseClient.collections('products').delete();
+      } catch {}
+      await createCollection();
+      typesenseCleared = true;
+    } catch (e: any) {
+      console.error('[ADMIN] Typesense clear failed:', e.message);
+    }
+    console.log(`[ADMIN] ⚠️  CLEARED ALL PRODUCTS: ${deletedMongo.deletedCount} products, ${deletedCart.count} cart items, ${deletedWishlist.count} wishlist items`);
+    res.json({
+      success: true,
+      productsDeleted: deletedMongo.deletedCount,
+      cartItemsDeleted: deletedCart.count,
+      wishlistItemsDeleted: deletedWishlist.count,
+      typesenseRecreated: typesenseCleared,
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
