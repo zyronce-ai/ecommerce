@@ -41,13 +41,18 @@ export function NotificationBanner() {
 
     setLoading(true);
     try {
-      const token = await requestNotificationPermission();
-      if (!token) {
+      const result = await requestNotificationPermission();
+      if (!result.token) {
         const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unknown';
+        const errMsg = result.error || 'Unknown error';
         if (perm === 'denied') {
-          setError('Notifications are blocked. Click the lock icon in address bar to allow.');
+          setError('Notifications are blocked. Click the lock icon in address bar → Allow notifications.');
+        } else if (errMsg.includes('push service')) {
+          setError('Push service unreachable. Try: (1) Different browser, (2) Disable ad-blocker, (3) Incognito mode.');
+        } else if (errMsg.includes('vapid')) {
+          setError('VAPID key invalid. Regenerate in Firebase Console.');
         } else {
-          setError('Could not get notification permission. Check console (F12) for details.');
+          setError(`Error: ${errMsg}`);
         }
         return;
       }
@@ -58,7 +63,7 @@ export function NotificationBanner() {
           'Content-Type': 'application/json',
           ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
-        body: JSON.stringify({ token, userId: currentUser.id, device: 'web' }),
+        body: JSON.stringify({ token: result.token, userId: currentUser.id, device: 'web' }),
       });
       if (!res.ok) {
         setError('Saved locally but server sync failed. Will retry later.');

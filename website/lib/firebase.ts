@@ -54,36 +54,50 @@ export function initFirebase(): Messaging | null {
   }
 }
 
-export async function requestNotificationPermission(): Promise<string | null> {
+export async function requestNotificationPermission(): Promise<{ token: string | null; error?: string }> {
   try {
     if (!isFirebaseConfigured()) {
       console.error('[FCM] Firebase not configured - check NEXT_PUBLIC_FIREBASE_* env vars');
-      return null;
+      return { token: null, error: 'Firebase env vars not set' };
     }
 
     if (typeof Notification === 'undefined') {
       console.error('[FCM] Notification API not available');
-      return null;
+      return { token: null, error: 'Notification API not available' };
+    }
+
+    if (!('serviceWorker' in navigator)) {
+      console.error('[FCM] Service workers not supported');
+      return { token: null, error: 'Service workers not supported' };
     }
 
     await ensureServiceWorkerConfigured();
 
     const permission = await Notification.requestPermission();
     console.log('[FCM] Permission result:', permission);
-    if (permission !== 'granted') return null;
+    if (permission !== 'granted') {
+      return { token: null, error: 'Permission not granted' };
+    }
 
     const msg = initFirebase();
-    if (!msg) return null;
+    if (!msg) {
+      return { token: null, error: 'Firebase messaging init failed' };
+    }
+
+    const swReg = await navigator.serviceWorker.ready;
+    console.log('[FCM] SW active:', swReg.active?.state, 'scope:', swReg.scope);
 
     const token = await getToken(msg, {
       vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-      serviceWorkerRegistration: await navigator.serviceWorker.ready,
+      serviceWorkerRegistration: swReg,
     });
     console.log('[FCM] Token received:', token ? token.substring(0, 20) + '...' : 'null');
-    return token;
+    return { token };
   } catch (err: any) {
-    console.error('[FCM] requestNotificationPermission error:', err.message || err);
-    return null;
+    const msg = err?.message || String(err);
+    const code = err?.code || 'unknown';
+    console.error('[FCM] requestNotificationPermission error:', { code, message: msg });
+    return { token: null, error: msg };
   }
 }
 
