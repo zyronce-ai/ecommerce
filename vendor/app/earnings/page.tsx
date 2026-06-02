@@ -13,7 +13,7 @@ export default function EarningsPage() {
     { label: 'Total Earnings', value: earnings ? formatPrice(earnings.totalRevenue) : '—', icon: IndianRupee },
     { label: 'Total Orders', value: earnings?.totalOrders ?? '—', icon: TrendingUp },
     { label: 'Pending Payout', value: earnings ? formatPrice(earnings.pendingPayouts) : '—', icon: Calendar },
-    { label: 'Balance', value: earnings ? formatPrice(earnings.totalRevenue - earnings.pendingPayouts) : '—', icon: Wallet },
+    { label: 'Balance', value: earnings ? formatPrice((earnings.totalRevenue ?? 0) - (earnings.pendingPayouts ?? 0)) : '—', icon: Wallet },
   ];
 
   return (

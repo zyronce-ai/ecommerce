@@ -30,9 +30,11 @@ function VendorDashboardInner() {
   useEffect(() => {
     if (!vendorId) return;
     fetch(`${API}/api/vendor/products/${vendorId}`).then(r => r.json()).then((products) => {
-      setTopProducts((products || []).slice(0, 3));
+      if (Array.isArray(products)) setTopProducts(products.slice(0, 3));
     }).catch(() => {});
-    fetch(`${API}/api/vendor/earnings/${vendorId}`).then(r => r.json()).then(setEarnings).catch(() => {});
+    fetch(`${API}/api/vendor/earnings/${vendorId}`).then((r) => r.ok ? r.json() : null).then((data) => {
+      if (data && typeof data === 'object' && !data.error) setEarnings(data);
+    }).catch(() => {});
   }, [vendorId]);
 
   if (!mounted) return null;
