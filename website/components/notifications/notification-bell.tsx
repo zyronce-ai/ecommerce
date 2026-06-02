@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, MouseEvent } from 'react';
 import Link from 'next/link';
 import { Bell, Check, X, Trash2, Package, Tag, TrendingDown, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -112,7 +112,7 @@ export function NotificationBell() {
     }
   }
 
-  async function removeNotif(id: string, e: React.MouseEvent) {
+  async function removeNotif(id: string, e: MouseEvent) {
     e.stopPropagation();
     const wasUnread = items.find((n) => n._id === id)?.read === false;
     setItems((prev) => prev.filter((n) => n._id !== id));
