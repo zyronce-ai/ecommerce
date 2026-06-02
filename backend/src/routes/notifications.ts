@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { FCMToken } from '../models/FCMToken';
 import { Notification } from '../models/Notification';
 import { sendPushNotification } from '../utils/firebase-admin';
-import { authMiddleware } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
@@ -76,7 +76,7 @@ router.post('/broadcast', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/', authMiddleware, async (req: any, res: Response) => {
+router.get('/', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -97,7 +97,7 @@ router.get('/', authMiddleware, async (req: any, res: Response) => {
   }
 });
 
-router.get('/unread-count', authMiddleware, async (req: any, res: Response) => {
+router.get('/unread-count', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -109,7 +109,7 @@ router.get('/unread-count', authMiddleware, async (req: any, res: Response) => {
   }
 });
 
-router.patch('/:id/read', authMiddleware, async (req: any, res: Response) => {
+router.patch('/:id/read', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -126,7 +126,7 @@ router.patch('/:id/read', authMiddleware, async (req: any, res: Response) => {
   }
 });
 
-router.post('/mark-all-read', authMiddleware, async (req: any, res: Response) => {
+router.post('/mark-all-read', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -141,7 +141,7 @@ router.post('/mark-all-read', authMiddleware, async (req: any, res: Response) =>
   }
 });
 
-router.delete('/:id', authMiddleware, async (req: any, res: Response) => {
+router.delete('/:id', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
