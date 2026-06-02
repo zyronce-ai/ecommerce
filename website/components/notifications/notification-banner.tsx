@@ -1,25 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Bell, X } from 'lucide-react';
-import { requestNotificationPermission, isFirebaseConfigured } from '@/lib/firebase';
+import { requestNotificationPermission } from '@/lib/firebase';
 import { useAuth } from '@/lib/use-auth';
 import { getToken } from '@/lib/use-api';
 
 export function NotificationBanner() {
-  const { data: session } = useSession();
-  const { user: customUser } = useAuth();
-  const currentUser = customUser || session?.user;
+  const { user: currentUser } = useAuth();
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (currentUser) {
-      setShow(true);
-    }
+    if (currentUser) setShow(true);
   }, [currentUser]);
 
   function detectBrave(): boolean {
@@ -50,6 +45,7 @@ export function NotificationBanner() {
     }
 
     setLoading(true);
+    setError(null);
     try {
       const result = await requestNotificationPermission();
       if (!result.token) {
@@ -67,47 +63,24 @@ export function NotificationBanner() {
         return;
       }
 
-    if (typeof Notification === 'undefined') {
-      setError('Your browser does not support notifications.');
-      return;
-    }
-
-    if (!currentUser?.id) {
-      setError('Please login to enable notifications.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const result = await requestNotificationPermission();
-      if (!result.token) {
-        const perm = typeof Notification !== 'undefined' ? Notification.permission : 'unknown';
-        const errMsg = result.error || 'Unknown error';
-        if (perm === 'denied') {
-          setError('Notifications are blocked. Click the lock icon in address bar → Allow notifications.');
-        } else if (errMsg.includes('push service')) {
-          setError('Push service unreachable. Try: (1) Different browser, (2) Disable ad-blocker, (3) Incognito mode.');
-        } else if (errMsg.includes('vapid')) {
-          setError('VAPID key invalid. Regenerate in Firebase Console.');
-        } else {
-          setError(`Error: ${errMsg}`);
-        }
-        return;
-      }
       const authToken = getToken();
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notifications/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-        },
-        body: JSON.stringify({ token: result.token, userId: currentUser.id, device: 'web' }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notifications/token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+          },
+          body: JSON.stringify({ token: result.token, userId: currentUser.id, device: 'web' }),
+        }
+      );
       if (!res.ok) {
         setError('Saved locally but server sync failed. Will retry later.');
         console.error('[FCM] Token save failed:', await res.text());
+      } else {
+        setShow(false);
       }
-      setShow(false);
     } catch (err: any) {
       setError('Error: ' + (err.message || 'Unknown'));
     } finally {
