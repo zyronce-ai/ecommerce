@@ -54,6 +54,11 @@ import seedRoutes from './routes/seed';
 import settingsRoutes from './routes/settings';
 import { initFirebaseAdmin } from './utils/firebase-admin';
 import { createCollection, syncAllProducts } from './utils/typesense';
+import uploadRoutes from './routes/upload';
+import path from 'path';
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/upload', uploadRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
