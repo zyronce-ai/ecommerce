@@ -18,10 +18,12 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     const token = auth.replace('Bearer ', '');
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
 
+    if (!decoded.id) return res.status(401).json({ error: 'Invalid token payload' });
+
     const user = await prisma.user.findUnique({ where: { id: decoded.id }, select: { id: true, role: true } });
     if (!user) return res.status(401).json({ error: 'User not found' });
 
-    req.user = user;
+    req.user = { id: user.id, role: decoded.role || user.role };
     next();
   } catch {
     res.status(401).json({ error: 'Invalid token' });
