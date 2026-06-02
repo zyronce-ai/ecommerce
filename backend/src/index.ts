@@ -114,6 +114,15 @@ async function start() {
   initFirebaseAdmin();
   initCloudinary();
 
+  // Drop stale review index if it exists
+  try {
+    const db = mongoose.connection.db;
+    if (db) {
+      await db.collection('reviews').dropIndex('productId_1_userId_1');
+      console.log('[MONGO] Dropped stale review index');
+    }
+  } catch {} // ignore if index doesn't exist
+
   if (process.env.TYPESENSE_API_KEY) {
     try {
       await createCollection();
