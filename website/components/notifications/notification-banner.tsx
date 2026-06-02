@@ -5,9 +5,13 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Bell, X } from 'lucide-react';
 import { requestNotificationPermission } from '@/lib/firebase';
+import { useAuth } from '@/lib/use-auth';
+import { getToken } from '@/lib/use-api';
 
 export function NotificationBanner() {
   const { data: session } = useSession();
+  const { user: customUser } = useAuth();
+  const currentUser = customUser || session?.user;
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -19,11 +23,15 @@ export function NotificationBanner() {
   async function handleEnable() {
     setLoading(true);
     const token = await requestNotificationPermission();
-    if (token && session?.user?.id) {
+    if (token && currentUser?.id) {
+      const authToken = getToken();
       await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notifications/token`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, userId: session.user.id }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        body: JSON.stringify({ token, userId: currentUser.id, device: 'web' }),
       });
     }
     setLoading(false);
