@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, ShoppingBag, IndianRupee, TrendingUp, Star, Wallet, Clock, CheckCircle } from 'lucide-react';
 import { formatPrice, formatDate } from '@/lib/utils';
@@ -9,6 +10,15 @@ import { useApi, getVendorId } from '@/lib/use-api';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function VendorDashboard() {
+  try {
+    return <ErrorBoundary><VendorDashboardInner /></ErrorBoundary>;
+  } catch (e: any) {
+    console.error('[VendorDashboard] Error:', e);
+    return <div className="p-6 text-center"><p className="text-destructive">{e.message}</p></div>;
+  }
+}
+
+function VendorDashboardInner() {
   const vendorId = getVendorId() || '';
   const { data: stats } = useApi<any>(`/api/vendor/stats/${vendorId}`);
   const { data: orders } = useApi<any[]>(`/api/vendor/orders/${vendorId}`);
