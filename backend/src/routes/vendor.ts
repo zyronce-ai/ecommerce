@@ -75,7 +75,9 @@ router.delete('/products/:id', authenticate, requireRole('VENDOR', 'ADMIN'), asy
       return res.status(403).json({ error: 'Forbidden' });
     }
     await Product.findByIdAndDelete(req.params.id);
-    removeProduct(req.params.id);
+    await removeProduct(req.params.id);
+    await prisma.cartItem.deleteMany({ where: { productId: req.params.id } }).catch(() => {});
+    await prisma.wishlistItem.deleteMany({ where: { productId: req.params.id } }).catch(() => {});
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

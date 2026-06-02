@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { prisma } from '../index';
 import { Product } from '../../mongo/models/Product';
 import { authenticate, requireRole } from '../middleware/auth';
 import { syncProduct, removeProduct } from '../utils/typesense';
@@ -65,7 +66,9 @@ router.delete('/:id', authenticate, requireRole('ADMIN', 'VENDOR'), async (req: 
       return res.status(403).json({ error: 'Forbidden' });
     }
     await Product.findByIdAndDelete(req.params.id);
-    removeProduct(req.params.id);
+    await removeProduct(req.params.id);
+    await prisma.cartItem.deleteMany({ where: { productId: req.params.id } }).catch(() => {});
+    await prisma.wishlistItem.deleteMany({ where: { productId: req.params.id } }).catch(() => {});
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

@@ -75,8 +75,12 @@ export async function syncProduct(product: any) {
 export async function removeProduct(id: string) {
   try {
     await client.collections(COLLECTION).documents(id).delete();
-  } catch {
-    // not found — ignore
+    console.log(`[TYPESENSE] Removed product ${id}`);
+  } catch (err: any) {
+    if (err.message?.includes('Not Found') || err.httpStatus === 404) {
+      return;
+    }
+    console.error(`[TYPESENSE] Failed to remove product ${id}:`, err.message);
   }
 }
 
