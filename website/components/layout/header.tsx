@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { getInitials } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/cart-context';
 import { useWishlist } from '@/contexts/wishlist-context';
@@ -75,7 +75,6 @@ export function Header() {
                   <Link href="/deals" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted">Deals & Offers</Link>
                   <SeparatorMobile />
                   <p className="mb-2 mt-4 text-xs font-semibold uppercase text-muted-foreground">Categories</p>
-                  <Link href="/products?category=electronics" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted">📱 Electronics</Link>
                   <Link href="/products?category=fashion" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted">👕 Fashion</Link>
                   <Link href="/products?category=home" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted">🏠 Home & Living</Link>
                   <Link href="/products?category=sports" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted">⚽ Sports</Link>
@@ -107,7 +106,6 @@ export function Header() {
 
           <nav className="hidden gap-4 md:flex lg:gap-6">
             <Link href="/products" className="text-sm font-medium transition-colors hover:text-primary">Products</Link>
-            <Link href="/products?category=electronics" className="text-sm text-muted-foreground transition-colors hover:text-primary">Electronics</Link>
             <Link href="/products?category=fashion" className="text-sm text-muted-foreground transition-colors hover:text-primary">Fashion</Link>
             <Link href="/products?category=home" className="text-sm text-muted-foreground transition-colors hover:text-primary">Home</Link>
             <Link href="/deals" className="text-sm text-muted-foreground transition-colors hover:text-primary">Deals</Link>

@@ -91,6 +91,11 @@ function ProductsPage() {
       setSearchQuery(q);
       fetchProducts({ q, sort });
     }
+    const cat = searchParams.get('category');
+    if (cat) {
+      setSelectedCategories([cat]);
+      fetchProducts({ cat, sort });
+    }
   }, [searchParams, sort, fetchProducts]);
 
   const toggleCategory = (cat: string) => {

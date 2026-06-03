@@ -31,7 +31,6 @@ export function Footer() {
             <h4 className="text-xs font-semibold sm:text-sm">Shop</h4>
             <ul className="space-y-1.5 text-xs text-muted-foreground sm:space-y-2 sm:text-sm">
               <li><Link href="/products" className="hover:text-primary transition-colors">All Products</Link></li>
-              <li><Link href="/products?category=electronics" className="hover:text-primary transition-colors">Electronics</Link></li>
               <li><Link href="/products?category=fashion" className="hover:text-primary transition-colors">Fashion</Link></li>
               <li><Link href="/products?category=home" className="hover:text-primary transition-colors">Home & Living</Link></li>
               <li><Link href="/deals" className="hover:text-primary transition-colors">Deals & Offers</Link></li>
