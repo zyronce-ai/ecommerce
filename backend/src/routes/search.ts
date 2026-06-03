@@ -25,11 +25,12 @@ router.get('/', async (req: Request, res: Response) => {
 
     const filter: any = { isActive: { $ne: false } };
     if (q) filter.name = { $regex: q, $options: 'i' };
-    if (category) {
+    const catSlug = typeof category === 'string' ? category : '';
+    if (catSlug) {
       const catDoc = await Category.findOne({
         $or: [
-          { slug: category.toLowerCase() },
-          { name: { $regex: new RegExp('^' + category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') } },
+          { slug: catSlug.toLowerCase() },
+          { name: { $regex: new RegExp('^' + catSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') } },
         ],
       });
       if (catDoc) filter.category = catDoc._id;
