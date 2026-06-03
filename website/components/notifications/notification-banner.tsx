@@ -14,7 +14,15 @@ export function NotificationBanner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (currentUser) setShow(true);
+    if (!currentUser) return;
+    if (typeof localStorage !== 'undefined') {
+      if (localStorage.getItem('notif_ok') === 'true') return;
+    }
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      localStorage?.setItem('notif_ok', 'true');
+      return;
+    }
+    setShow(true);
   }, [currentUser]);
 
   function detectBrave(): boolean {
@@ -39,7 +47,7 @@ export function NotificationBanner() {
 
     if (detectBrave()) {
       setError(
-        'Brave browser blocks FCM by default. Use Chrome/Edge, OR enable in Brave: brave://settings/privacy → "Google services for push messaging" → ON. Then hard refresh (Ctrl+Shift+R).'
+        'Brave may block push. If this fails, try Chrome or Edge for FCM, or dismiss to use in-app notifications via bell.'
       );
       return;
     }
@@ -79,6 +87,7 @@ export function NotificationBanner() {
         setError('Saved locally but server sync failed. Will retry later.');
         console.error('[FCM] Token save failed:', await res.text());
       } else {
+        localStorage?.setItem('notif_ok', 'true');
         setShow(false);
       }
     } catch (err: any) {
@@ -86,6 +95,11 @@ export function NotificationBanner() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function dismiss() {
+    localStorage?.setItem('notif_ok', 'true');
+    setShow(false);
   }
 
   if (!show) return null;
@@ -103,7 +117,7 @@ export function NotificationBanner() {
           <Button size="sm" onClick={handleEnable} disabled={loading}>
             {loading ? '...' : 'Enable'}
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShow(false)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={dismiss}>
             <X className="h-4 w-4" />
           </Button>
         </div>

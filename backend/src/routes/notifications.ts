@@ -37,7 +37,29 @@ router.post('/send', async (req: Request, res: Response) => {
     if (!userId || !title || !body)
       return res.status(400).json({ error: 'userId, title, and body are required' });
 
-    await Notification.create({ userId, title, body, data: data || {}, type: type || 'SYSTEM', link });
+    const notif = await Notification.create({ userId, title, body, data: data || {}, type: type || 'SYSTEM', link });
+
+    try {
+      const io = (req.app as any).get('io');
+      if (io) {
+        io.to(`notifications:${userId}`).emit('notification', {
+          action: 'new',
+          notification: {
+            _id: notif._id,
+            userId: notif.userId,
+            title: notif.title,
+            body: notif.body,
+            type: notif.type,
+            read: false,
+            data: notif.data,
+            link: notif.link,
+            createdAt: notif.createdAt,
+          },
+        });
+      }
+    } catch (e) {
+      /* socket emit optional */
+    }
 
     const tokens = await FCMToken.find({ userId });
     if (tokens.length === 0) {
@@ -80,7 +102,32 @@ router.post('/broadcast', async (req: Request, res: Response) => {
       type: type || 'SYSTEM',
       link,
     }));
-    if (notifDocs.length > 0) await Notification.insertMany(notifDocs);
+    if (notifDocs.length > 0) {
+      const saved = await Notification.insertMany(notifDocs);
+      try {
+        const io = (req.app as any).get('io');
+        if (io) {
+          saved.forEach((n) => {
+            io.to(`notifications:${n.userId}`).emit('notification', {
+              action: 'new',
+              notification: {
+                _id: n._id,
+                userId: n.userId,
+                title: n.title,
+                body: n.body,
+                type: n.type,
+                read: false,
+                data: n.data,
+                link: n.link,
+                createdAt: n.createdAt,
+              },
+            });
+          });
+        }
+      } catch (e) {
+        /* socket emit optional */
+      }
+    }
 
     res.json({ success: true, total: tokens.length, users: userIds.length });
   } catch (err: any) {

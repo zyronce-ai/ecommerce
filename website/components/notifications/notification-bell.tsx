@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import Link from 'next/link';
 import { Bell, Check, X, Trash2, Package, Tag, TrendingDown, Info, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/use-auth';
 import { apiGet, apiPost, apiDelete } from '@/lib/use-api';
+import { useSocket } from '@/lib/socket';
+import { NotificationModal } from './notification-modal';
 
 type NotifType = 'ORDER' | 'DEAL' | 'PRICE' | 'SYSTEM';
 
@@ -58,7 +59,10 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Notification | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const socket = useSocket();
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
@@ -88,6 +92,39 @@ export function NotificationBell() {
   useEffect(() => {
     if (open) fetchNotifications();
   }, [open, fetchNotifications]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    function onNotification(data: { action: string; notification: Notification }) {
+      if (data.action === 'new' && data.notification) {
+        const n = data.notification;
+        setItems((prev) => [n, ...prev].slice(0, 50));
+        setUnread((u) => u + 1);
+
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && n.title) {
+          try {
+            const popup = new Notification(n.title, {
+              body: n.body,
+              icon: '/icon.svg',
+              tag: n._id,
+            });
+            popup.onclick = () => {
+              window.focus();
+              if (n.link) window.location.href = n.link;
+            };
+          } catch (e) {
+            /* browser notification failed, still in bell */
+          }
+        }
+      }
+    }
+
+    socket.on('notification', onNotification);
+    return () => {
+      socket.off('notification', onNotification);
+    };
+  }, [socket]);
 
   useEffect(() => {
     function onClickOutside(e: globalThis.MouseEvent) {
@@ -130,10 +167,8 @@ export function NotificationBell() {
   }
 
   function handleItemClick(n: Notification) {
-    if (!n.read) markRead(n._id);
-    if (n.link) {
-      setOpen(false);
-    }
+    setSelected(n);
+    setModalOpen(true);
   }
 
   if (!user) return null;
@@ -244,17 +279,18 @@ export function NotificationBell() {
                   </Button>
                 </div>
               );
-              return n.link ? (
-                <Link key={n._id} href={n.link} className="block">
-                  {inner}
-                </Link>
-              ) : (
-                <div key={n._id}>{inner}</div>
-              );
+              return <div key={n._id}>{inner}</div>;
             })}
           </div>
         </div>
       )}
+
+      <NotificationModal
+        notification={selected}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onMarkRead={markRead}
+      />
     </div>
   );
 }
