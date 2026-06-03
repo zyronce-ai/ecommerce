@@ -63,15 +63,28 @@ router.post('/send', async (req: Request, res: Response) => {
 
 router.post('/broadcast', async (req: Request, res: Response) => {
   try {
-    const { title, body, data } = req.body;
+    const { title, body, data, type, link } = req.body;
     if (!title || !body) return res.status(400).json({ error: 'title and body are required' });
 
     const tokens = await FCMToken.find().distinct('token');
     if (tokens.length === 0) return res.status(404).json({ error: 'No registered tokens' });
 
     await Promise.allSettled(tokens.map((t) => sendPushNotification(t, { title, body, data })));
-    res.json({ success: true, total: tokens.length });
+
+    const userIds = await FCMToken.find().distinct('userId');
+    const notifDocs = userIds.map((uid: string) => ({
+      userId: uid,
+      title,
+      body,
+      data: data || {},
+      type: type || 'SYSTEM',
+      link,
+    }));
+    if (notifDocs.length > 0) await Notification.insertMany(notifDocs);
+
+    res.json({ success: true, total: tokens.length, users: userIds.length });
   } catch (err: any) {
+    console.error('[notifications/broadcast]', err);
     res.status(500).json({ error: 'Failed to broadcast' });
   }
 });

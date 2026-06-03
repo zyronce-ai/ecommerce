@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import Link from 'next/link';
-import { Bell, Check, X, Trash2, Package, Tag, TrendingDown, Info } from 'lucide-react';
+import { Bell, Check, X, Trash2, Package, Tag, TrendingDown, Info, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/use-auth';
@@ -81,9 +81,13 @@ export function NotificationBell() {
   useEffect(() => {
     if (!user) return;
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
+    const interval = setInterval(fetchNotifications, 15000);
     return () => clearInterval(interval);
   }, [user, fetchNotifications]);
+
+  useEffect(() => {
+    if (open) fetchNotifications();
+  }, [open, fetchNotifications]);
 
   useEffect(() => {
     function onClickOutside(e: globalThis.MouseEvent) {
@@ -159,6 +163,16 @@ export function NotificationBell() {
           <div className="flex items-center justify-between p-3 border-b dark:border-gray-800">
             <h3 className="font-semibold text-sm">Notifications</h3>
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={fetchNotifications}
+                className="h-7 text-xs"
+                title="Refresh"
+              >
+                <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               {unread > 0 && (
                 <Button
                   variant="ghost"
