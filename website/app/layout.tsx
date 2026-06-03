@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   description: 'Discover amazing products at unbeatable prices. Shop electronics, fashion, home goods and more.',
   keywords: ['ecommerce', 'shop', 'online store', 'electronics', 'fashion', 'deals'],
   manifest: '/manifest.json',
+  verification: {
+    google: '_H_N7Q0hAiHUwJ-REBtaqNEQ1P6LQKyncusU4g1ZpLU',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_IN',
