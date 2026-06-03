@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Product } from '../../mongo/models/Product';
+import { Category } from '../../mongo/models/Category';
 import { searchProducts } from '../utils/typesense.js';
 
 const router = Router();
@@ -24,7 +25,15 @@ router.get('/', async (req: Request, res: Response) => {
 
     const filter: any = { isActive: { $ne: false } };
     if (q) filter.name = { $regex: q, $options: 'i' };
-    if (category) filter.category = category;
+    if (category) {
+      const catDoc = await Category.findOne({
+        $or: [
+          { slug: category.toLowerCase() },
+          { name: { $regex: new RegExp('^' + category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') } },
+        ],
+      });
+      if (catDoc) filter.category = catDoc._id;
+    }
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);

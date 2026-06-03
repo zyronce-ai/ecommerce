@@ -1,6 +1,7 @@
 import Typesense from 'typesense';
 import type { SearchResponseHit } from 'typesense/lib/Typesense/Documents';
 import { Product } from '../../mongo/models/Product';
+import { Category } from '../../mongo/models/Category';
 
 const client = new Typesense.Client({
   nodes: [{
@@ -68,7 +69,15 @@ function toTypesenseDoc(product: any) {
 
 export async function syncProduct(product: any) {
   try {
-    await client.collections(COLLECTION).documents().upsert(toTypesenseDoc(product));
+    const doc = product.toObject ? product.toObject() : { ...product };
+    if (doc.category && typeof doc.category === 'object' && doc.category._id && !doc.category.name) {
+      const cat = await Category.findById(doc.category._id).lean();
+      if (cat) doc.category = cat;
+    } else if (typeof doc.category === 'string') {
+      const cat = await Category.findById(doc.category).lean();
+      if (cat) doc.category = cat;
+    }
+    await client.collections(COLLECTION).documents().upsert(toTypesenseDoc(doc));
   } catch (err: any) {
     console.error('[TYPESENSE] sync error:', err.message);
   }
@@ -134,7 +143,7 @@ export async function searchProducts(params: {
 
 export async function syncAllProducts() {
   try {
-    const products = await Product.find({});
+    const products = await Product.find({}).populate('category');
     const docs = products.map(toTypesenseDoc);
     await client.collections(COLLECTION).documents().import(docs, { action: 'upsert' });
     console.log(`[TYPESENSE] Synced ${docs.length} products`);
