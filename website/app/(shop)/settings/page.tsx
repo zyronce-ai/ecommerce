@@ -33,7 +33,7 @@ export default function SettingsPage() {
   const [addrForm, setAddrForm] = useState({ line1: '', line2: '', city: '', state: '', pincode: '', isDefault: false });
 
   const token = typeof window !== 'undefined' ? getToken() : null;
-  const headers = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {};
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {};
 
   useEffect(() => {
     if (token) {
