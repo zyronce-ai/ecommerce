@@ -61,7 +61,7 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-12 sm:py-16">
         <div className="mb-6 sm:mb-8 flex items-center justify-between"><h2 className="text-xl font-bold sm:text-2xl">Featured Products</h2><Button variant="link" asChild><Link href="/products">View All <ArrowRight className="ml-1 h-4 w-4" /></Link></Button></div>
         <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {products.map((p: any) => (<ProductCard key={p._id} product={{ id: p.slug || p._id, name: p.name, price: p.price, comparePrice: p.comparePrice, image: p.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', rating: p.rating || 4.5, reviews: p.reviewCount || 0 }} />))}
+          {products.map((p: any) => (<ProductCard key={p._id} product={{ id: p._id, slug: p.slug, name: p.name, price: p.price, comparePrice: p.comparePrice, image: p.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', rating: p.rating || 4.5, reviews: p.reviewCount || 0 }} />))}
         </div>
       </section>
 

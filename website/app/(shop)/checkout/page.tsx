@@ -13,6 +13,8 @@ import { getToken } from '@/lib/use-api';
 import { useCart } from '@/contexts/cart-context';
 import { CreditCard, Truck, X, CheckCircle, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { usePincode } from '@/hooks/use-pincode';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -25,6 +27,18 @@ function decodeToken(token: string): any {
 const PAYMENT_METHODS = [
   { value: 'stripe', label: 'Credit/Debit Card', icon: CreditCard },
   { value: 'cod', label: 'Cash on Delivery', icon: Truck },
+];
+
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+  'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Andaman and Nicobar Islands', 'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir',
+  'Ladakh', 'Lakshadweep', 'Puducherry',
 ];
 
 export default function CheckoutPage() {
@@ -40,6 +54,8 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponLoading, setCouponLoading] = useState(false);
 
+  const { lookup: lookupPincode, loading: pinLoading, result: pinResult, error: pinError } = usePincode();
+
   const token = getToken();
   const user = token ? decodeToken(token) : null;
   const userId = user?.id || '';
@@ -50,6 +66,17 @@ export default function CheckoutPage() {
         .then(r => r.json()).then(setSavedAddresses).catch(() => {});
     }
   }, [token]);
+
+  useEffect(() => {
+    if (pinResult) {
+      setAddress((prev) => {
+        const next = { ...prev, city: pinResult.city, state: pinResult.state };
+        if (prev.city && prev.city !== pinResult.city) next.city = prev.city;
+        if (prev.state && prev.state !== pinResult.state) next.state = prev.state;
+        return next;
+      });
+    }
+  }, [pinResult]);
 
   function selectSavedAddress(id: string) {
     setSelectedAddrId(id);
@@ -211,8 +238,21 @@ export default function CheckoutPage() {
                   <div className="space-y-1.5"><Label>Phone</Label><Input type="tel" value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} /></div>
                   <div className="space-y-1.5 sm:col-span-2"><Label>Street Address</Label><Input value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} /></div>
                   <div className="space-y-1.5"><Label>City</Label><Input value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} /></div>
-                  <div className="space-y-1.5"><Label>State</Label><Input value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} /></div>
-                  <div className="space-y-1.5"><Label>Pincode</Label><Input value={address.pincode} onChange={(e) => setAddress({ ...address, pincode: e.target.value })} /></div>
+                  <div className="space-y-1.5"><Label>State</Label>
+                    <Select value={address.state} onValueChange={(v) => setAddress({ ...address, state: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                      <SelectContent>
+                        {INDIAN_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5"><Label>Pincode</Label>
+                    <div className="relative">
+                      <Input maxLength={6} value={address.pincode} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setAddress({ ...address, pincode: v }); lookupPincode(v); }} placeholder="6-digit" />
+                      {pinLoading && <Loader2 className="absolute right-2 top-2 h-4 w-4 animate-spin text-muted-foreground" />}
+                    </div>
+                    {pinError && <p className="text-xs text-destructive mt-0.5">{pinError}</p>}
+                  </div>
                 </div>
               </CardContent>
               <div className="p-4 sm:p-6 pt-0"><Button onClick={() => setStep(2)}>Continue to Payment</Button></div>

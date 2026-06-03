@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, MapPin, Pencil, Trash2, Plus, ChevronLeft } from 'lucide-react';
+import { User, MapPin, Pencil, Trash2, Plus, ChevronLeft, Loader2 } from 'lucide-react';
 import { getToken } from '@/lib/use-api';
 import { toast } from 'sonner';
+import { usePincode } from '@/hooks/use-pincode';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -24,6 +26,18 @@ interface Address {
   isDefault: boolean;
 }
 
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+  'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+  'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Andaman and Nicobar Islands', 'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir',
+  'Ladakh', 'Lakshadweep', 'Puducherry',
+];
+
 export default function SettingsPage() {
   const [tab, setTab] = useState<'profile' | 'addresses'>('profile');
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
@@ -31,6 +45,8 @@ export default function SettingsPage() {
   const [editing, setEditing] = useState<Address | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [addrForm, setAddrForm] = useState({ line1: '', line2: '', city: '', state: '', pincode: '', isDefault: false });
+
+  const { lookup: lookupPincode, loading: pinLoading, result: pinResult, error: pinError } = usePincode();
 
   const token = typeof window !== 'undefined' ? getToken() : null;
   const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {};
@@ -51,6 +67,17 @@ export default function SettingsPage() {
   };
 
   useEffect(() => { if (tab === 'addresses') fetchAddresses(); }, [tab, token]);
+
+  useEffect(() => {
+    if (pinResult) {
+      setAddrForm((prev) => {
+        const next = { ...prev, city: pinResult.city, state: pinResult.state };
+        if (prev.city && prev.city !== pinResult.city) next.city = prev.city;
+        if (prev.state && prev.state !== pinResult.state) next.state = prev.state;
+        return next;
+      });
+    }
+  }, [pinResult]);
 
   async function handleSave() {
     if (!token) { toast.error('Please login'); return; }
@@ -141,8 +168,21 @@ export default function SettingsPage() {
                     <div className="space-y-1.5"><Label className="text-xs">Address Line 2 (optional)</Label><Input className="h-9 text-sm" value={addrForm.line2} onChange={(e) => setAddrForm({ ...addrForm, line2: e.target.value })} placeholder="Area, landmark" /></div>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="space-y-1.5"><Label className="text-xs">City</Label><Input className="h-9 text-sm" value={addrForm.city} onChange={(e) => setAddrForm({ ...addrForm, city: e.target.value })} /></div>
-                      <div className="space-y-1.5"><Label className="text-xs">State</Label><Input className="h-9 text-sm" value={addrForm.state} onChange={(e) => setAddrForm({ ...addrForm, state: e.target.value })} /></div>
-                      <div className="space-y-1.5"><Label className="text-xs">Pincode</Label><Input className="h-9 text-sm" value={addrForm.pincode} onChange={(e) => setAddrForm({ ...addrForm, pincode: e.target.value })} /></div>
+                      <div className="space-y-1.5"><Label className="text-xs">State</Label>
+                        <Select value={addrForm.state} onValueChange={(v) => setAddrForm({ ...addrForm, state: v })}>
+                          <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select state" /></SelectTrigger>
+                          <SelectContent>
+                            {INDIAN_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5"><Label className="text-xs">Pincode</Label>
+                        <div className="relative">
+                          <Input className="h-9 text-sm pr-7" maxLength={6} value={addrForm.pincode} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setAddrForm({ ...addrForm, pincode: v }); lookupPincode(v); }} placeholder="6-digit" />
+                          {pinLoading && <Loader2 className="absolute right-2 top-2 h-4 w-4 animate-spin text-muted-foreground" />}
+                        </div>
+                        {pinError && <p className="text-xs text-destructive mt-0.5">{pinError}</p>}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox id="default-addr" checked={addrForm.isDefault} onCheckedChange={(v) => setAddrForm({ ...addrForm, isDefault: v === true })} />

@@ -56,6 +56,7 @@ import notificationRoutes from './routes/notifications';
 import seedRoutes from './routes/seed';
 import settingsRoutes from './routes/settings';
 import addressRoutes from './routes/address';
+import pincodeRoutes from './routes/pincode';
 import { initFirebaseAdmin } from './utils/firebase-admin';
 import { initCloudinary } from './utils/cloudinary';
 import { createCollection, syncAllProducts } from './utils/typesense';
@@ -82,6 +83,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/seed', seedRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/pincode', pincodeRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

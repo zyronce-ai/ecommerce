@@ -16,7 +16,7 @@ export default function WishlistPage() {
     if (wlLoading) return;
     if (productIds.length === 0) { setProducts([]); setLoading(false); return; }
     fetch(`${API}/api/products`).then(r => r.json()).then((all) => {
-      setProducts(all.filter((p: any) => productIds.includes(p._id)));
+      setProducts(all.filter((p: any) => productIds.includes(p._id) || productIds.includes(p.slug)));
     }).catch(() => {}).finally(() => setLoading(false));
   }, [productIds, wlLoading]);
 
@@ -33,7 +33,7 @@ export default function WishlistPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {products.map((p: any) => (<ProductCard key={p._id} product={{ id: p.slug || p._id, name: p.name, price: p.price, comparePrice: p.comparePrice, image: p.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', rating: p.rating || 4.5, reviews: p.reviewCount || 0 }} />))}
+          {products.map((p: any) => (<ProductCard key={p._id} product={{ id: p._id, slug: p.slug, name: p.name, price: p.price, comparePrice: p.comparePrice, image: p.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', rating: p.rating || 4.5, reviews: p.reviewCount || 0 }} />))}
         </div>
       )}
     </div>

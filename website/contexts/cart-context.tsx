@@ -47,7 +47,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const productIds = [...new Set(cartItems.map((i: CartItem) => i.productId))];
         let productMap: Record<string, any> = {};
         if (productIds.length > 0) {
-          try { const all = await fetch(`${API}/api/products`).then(r => r.json()); productMap = Object.fromEntries(all.filter((p: any) => productIds.includes(p._id)).map((p: any) => [p._id, { name: p.name, price: p.price, images: p.images || [] }])); } catch {}
+          try { const all = await fetch(`${API}/api/products`).then(r => r.json());         productMap = Object.fromEntries(all.filter((p: any) => productIds.includes(p._id) || productIds.includes(p.slug)).flatMap((p: any) => {
+          const v = { name: p.name, price: p.price, images: p.images || [] };
+          const pairs: [string, any][] = [[p._id, v]];
+          if (p.slug) pairs.push([p.slug, v]);
+          return pairs;
+        })); } catch {}
         }
         setItems(cartItems.map((i: CartItem) => ({ ...i, _product: productMap[i.productId] })));
       } else setItems([]);

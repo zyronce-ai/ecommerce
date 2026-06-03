@@ -261,7 +261,7 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
         {products.map((p: any) => (
           <ProductCard key={p._id} product={{
-            id: p.slug || p._id, name: p.name, price: p.price, comparePrice: p.comparePrice,
+            id: p._id, slug: p.slug, name: p.name, price: p.price, comparePrice: p.comparePrice,
             image: p.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
             rating: p.rating || 4.5, reviews: p.reviewCount || p.reviewsCount || 0,
           }} />

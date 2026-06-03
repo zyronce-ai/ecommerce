@@ -13,6 +13,7 @@ import { useWishlist } from '@/contexts/wishlist-context';
 interface ProductCardProps {
   product: {
     id: string;
+    slug?: string;
     name: string;
     price: number;
     comparePrice?: number;
@@ -42,7 +43,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Card className="group overflow-hidden transition-all hover:shadow-lg active:scale-[0.98] touch-action-manipulation">
-      <Link href={`/products/${product.id}`}>
+      <Link href={`/products/${product.slug || product.id}`}>
         <div className="relative aspect-square overflow-hidden bg-muted">
           <img
             src={product.image}
@@ -66,7 +67,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </Link>
       <CardContent className="p-2.5 sm:p-4">
-        <Link href={`/products/${product.id}`}>
+          <Link href={`/products/${product.slug || product.id}`}>
           <h3 className="line-clamp-1 text-xs font-medium sm:text-sm hover:text-primary transition-colors">{product.name}</h3>
         </Link>
         {product.rating && (
