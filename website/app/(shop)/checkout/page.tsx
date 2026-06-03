@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { formatPrice } from '@/lib/utils';
 import { getToken } from '@/lib/use-api';
 import { useCart } from '@/contexts/cart-context';
-import { CreditCard, Truck, X, CheckCircle, Loader2 } from 'lucide-react';
+import { CreditCard, Truck, X, CheckCircle, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -34,6 +34,8 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState({ name: '', email: '', phone: '', street: '', city: '', state: '', pincode: '' });
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddrId, setSelectedAddrId] = useState<string>('new');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -41,6 +43,23 @@ export default function CheckoutPage() {
   const token = getToken();
   const user = token ? decodeToken(token) : null;
   const userId = user?.id || '';
+
+  useEffect(() => {
+    if (token) {
+      fetch(`${API}/api/addresses`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json()).then(setSavedAddresses).catch(() => {});
+    }
+  }, [token]);
+
+  function selectSavedAddress(id: string) {
+    setSelectedAddrId(id);
+    if (id === 'new') {
+      setAddress({ name: user?.name || '', email: user?.email || '', phone: '', street: '', city: '', state: '', pincode: '' });
+    } else {
+      const a = savedAddresses.find((a: any) => a.id === id);
+      if (a) setAddress((prev) => ({ ...prev, street: a.line1, city: a.city, state: a.state, pincode: a.pincode }));
+    }
+  }
 
   const subtotal = items.reduce((s, i) => s + (i._product?.price || 0) * i.quantity, 0);
   const shipping = subtotal > 499 ? 0 : 49;
@@ -165,14 +184,36 @@ export default function CheckoutPage() {
           {step === 1 && (
             <Card>
               <CardHeader className="p-4 sm:p-6"><CardTitle className="text-sm sm:text-base">Shipping Address</CardTitle></CardHeader>
-              <CardContent className="grid gap-3 p-4 pt-0 sm:grid-cols-2 sm:gap-4 sm:p-6 sm:pt-0">
-                <div className="space-y-1.5 sm:col-span-2 sm:space-y-2"><Label>Full Name</Label><Input value={address.name} onChange={(e) => setAddress({ ...address, name: e.target.value })} /></div>
-                <div className="space-y-1.5 sm:space-y-2"><Label>Email</Label><Input type="email" value={address.email} onChange={(e) => setAddress({ ...address, email: e.target.value })} /></div>
-                <div className="space-y-1.5 sm:space-y-2"><Label>Phone</Label><Input type="tel" value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} /></div>
-                <div className="space-y-1.5 sm:col-span-2 sm:space-y-2"><Label>Street Address</Label><Input value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} /></div>
-                <div className="space-y-1.5 sm:space-y-2"><Label>City</Label><Input value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} /></div>
-                <div className="space-y-1.5 sm:space-y-2"><Label>State</Label><Input value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} /></div>
-                <div className="space-y-1.5 sm:space-y-2"><Label>Pincode</Label><Input value={address.pincode} onChange={(e) => setAddress({ ...address, pincode: e.target.value })} /></div>
+              <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0 space-y-3">
+                {savedAddresses.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    <Label className="text-xs text-muted-foreground">Saved Addresses</Label>
+                    {savedAddresses.map((a: any) => (
+                      <label key={a.id} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${selectedAddrId === a.id ? 'border-primary' : ''}`}>
+                        <input type="radio" name="saved-addr" checked={selectedAddrId === a.id} onChange={() => selectSavedAddress(a.id)} className="mt-1 accent-primary" />
+                        <div className="text-sm flex-1">
+                          <p className="font-medium">{a.line1}{a.isDefault && <span className="ml-1 text-[10px] text-primary">Default</span>}</p>
+                          {a.line2 && <p className="text-muted-foreground text-xs">{a.line2}</p>}
+                          <p className="text-muted-foreground text-xs">{a.city}, {a.state} - {a.pincode}</p>
+                        </div>
+                      </label>
+                    ))}
+                    <label className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${selectedAddrId === 'new' ? 'border-primary' : ''}`}>
+                      <input type="radio" name="saved-addr" checked={selectedAddrId === 'new'} onChange={() => selectSavedAddress('new')} className="mt-1 accent-primary" />
+                      <div className="flex items-center gap-2 text-sm"><Plus className="h-4 w-4" /><span>Use a new address</span></div>
+                    </label>
+                  </div>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2"><Label>Full Name</Label><Input value={address.name} onChange={(e) => setAddress({ ...address, name: e.target.value })} /></div>
+                  <div className="space-y-1.5"><Label>Email</Label><Input type="email" value={address.email} onChange={(e) => setAddress({ ...address, email: e.target.value })} /></div>
+                  <div className="space-y-1.5"><Label>Phone</Label><Input type="tel" value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} /></div>
+                  <div className="space-y-1.5 sm:col-span-2"><Label>Street Address</Label><Input value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} /></div>
+                  <div className="space-y-1.5"><Label>City</Label><Input value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} /></div>
+                  <div className="space-y-1.5"><Label>State</Label><Input value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} /></div>
+                  <div className="space-y-1.5"><Label>Pincode</Label><Input value={address.pincode} onChange={(e) => setAddress({ ...address, pincode: e.target.value })} /></div>
+                </div>
               </CardContent>
               <div className="p-4 sm:p-6 pt-0"><Button onClick={() => setStep(2)}>Continue to Payment</Button></div>
             </Card>
