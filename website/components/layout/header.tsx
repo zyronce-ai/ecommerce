@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
-import { ShoppingCart, Heart, Search, Menu, User, LogOut, Settings, Store, X, Package } from 'lucide-react';
+import { ShoppingCart, Heart, Search, Menu, User, LogOut, Settings, Store, X, Package, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,10 @@ import { useCart } from '@/contexts/cart-context';
 import { useWishlist } from '@/contexts/wishlist-context';
 import { useAuth } from '@/lib/use-auth';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+
+function isAdmin(user: any) {
+  return user?.role === 'ADMIN';
+}
 
 export function Header() {
   const { data: session } = useSession();
@@ -179,6 +183,14 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/settings" className="cursor-pointer"><Settings className="mr-2 h-4 w-4" /> Settings</Link>
                 </DropdownMenuItem>
+                {isAdmin(currentUser) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="cursor-pointer"><LayoutDashboard className="mr-2 h-4 w-4" /> Admin Panel</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer text-destructive" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" /> Logout

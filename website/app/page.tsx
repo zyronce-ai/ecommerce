@@ -13,15 +13,18 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 export default function HomePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [bannerUrl, setBannerUrl] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetch(`${API}/api/products`).then(r => r.json()),
       fetch(`${API}/api/categories`).then(r => r.json()),
-    ]).then(([p, c]) => {
+      fetch(`${API}/api/settings`).then(r => r.json()).catch(() => ({})),
+    ]).then(([p, c, s]) => {
       setProducts(p.slice(0, 8));
       setCategories(c.slice(0, 6));
+      setBannerUrl(s.bannerUrl || '');
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -29,6 +32,11 @@ export default function HomePage() {
 
   return (
     <>
+      {bannerUrl && (
+        <div className="w-full overflow-hidden bg-muted">
+          <img src={bannerUrl} alt="Banner" className="w-full object-cover" style={{ maxHeight: 500, aspectRatio: '1920 / 950' }} />
+        </div>
+      )}
       <section className="relative bg-gradient-to-br from-primary/5 via-background to-primary/10">
         <div className="container mx-auto px-4 py-12 sm:py-16 md:py-24">
           <div className="grid items-center gap-6 sm:gap-8 md:grid-cols-2">

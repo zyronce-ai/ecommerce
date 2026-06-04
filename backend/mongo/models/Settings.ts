@@ -9,6 +9,7 @@ export interface ISettings extends Document {
   maintenanceMode: boolean;
   allowRegistration: boolean;
   guestCheckout: boolean;
+  bannerUrl: string;
 }
 
 const SettingsSchema = new Schema<ISettings>({
@@ -20,6 +21,7 @@ const SettingsSchema = new Schema<ISettings>({
   maintenanceMode: { type: Boolean, default: false },
   allowRegistration: { type: Boolean, default: true },
   guestCheckout: { type: Boolean, default: true },
+  bannerUrl: { type: String, default: '' },
 }, { timestamps: true });
 
 export const Settings = mongoose.model<ISettings>('Settings', SettingsSchema);
